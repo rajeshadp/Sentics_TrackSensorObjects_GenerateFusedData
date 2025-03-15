@@ -1,10 +1,15 @@
 Headers used and purpose
 ==========================
 iostream / fstream → Handles input/output operations, including file reading/writing.
+
 vector → Used for storing sensor objects, IMU data, and clusters.
+
 cmath → Provides mathematical functions (not explicitly used here).
+
 nlohmann/json.hpp → A JSON library used to parse sensor data from JSON files.
+
 fast-cpp-csv-parser/csv.h → A high-performance CSV parser used for reading IMU data.
+
 Eigen/Dense → Provides matrix operations for implementing the Kalman filter.
 
 This program reads sensor data, tracks objects using a Kalman filter, and fuses the data with IMU (Inertial Measurement Unit) readings to generate a refined dataset. Finally, it writes the fused data to a CSV file.
