@@ -6,14 +6,50 @@
 #include <nlohmann/json.hpp>
 #include "fast-cpp-csv-parser/csv.h"
 #include <Eigen/Dense>
+#include <sstream>
+#include <ctime>
+#include <chrono>
 
 using namespace std;
 using json = nlohmann::json;
 using namespace Eigen;
 
+// Function to convert "YYYY-MM-DD HH:MM:SS.sss" to a timestamp (seconds) and also T inside timestamp of IMU csv
+double parseTimestamp(const std::string& timestamp) {
+    std::tm tm = {};
+    std::string processed_timestamp = timestamp;
+
+    // Replace 'T' with ' ' to match expected format
+    size_t t_pos = processed_timestamp.find('T');
+    if (t_pos != std::string::npos) {
+        processed_timestamp[t_pos] = ' '; 
+    }
+
+    // Parse date and time (ignoring fractional seconds for now)
+    std::istringstream ss(processed_timestamp);
+    ss >> std::get_time(&tm, "%Y-%m-%d %H:%M:%S");
+    
+    if (ss.fail()) {
+        std::cerr << "Error parsing timestamp: " << timestamp << std::endl;
+        return 0.0; // Handle failure case
+    }
+
+    // Extract microseconds
+    size_t dot_pos = processed_timestamp.find_last_of('.');
+    double fraction = 0.0;
+    if (dot_pos != std::string::npos) {
+        std::string fraction_str = processed_timestamp.substr(dot_pos);
+        fraction = std::stod(fraction_str);
+    }
+
+    // Convert to time_t (epoch time) and add fraction
+    std::time_t time_epoch = std::mktime(&tm);
+    return static_cast<double>(time_epoch) + fraction;
+}
 struct SensorObject {
     string sensor_id;   // Camera ID (e.g., "cam_149")
     double timestamp;   // Time when object was detected
+    string timestamp_str;   // Time when object was detected
     Vector2d position;  // [x, y] coordinates
 };
 
@@ -29,6 +65,19 @@ struct Cluster {
     int f_id;                      // Unique cluster ID
     vector<Vector2d> cluster_data; // List of objects in the cluster ([x, y, sensor_id])
     double timestamp;              // Timestamp of the cluster
+    string timestamp_str;
+
+    // Function to format cluster data as a string
+    string format_cluster_data() const {
+        stringstream ss;
+        ss << "[";
+        for (size_t i = 0; i < cluster_data.size(); i++) {
+            ss << "(" << cluster_data[i].x() << "," << cluster_data[i].y() << ")";
+            if (i != cluster_data.size() - 1) ss << "; ";  // Separate multiple points
+        }
+        ss << "]";
+        return ss.str();
+    }
 };
 
 /*
@@ -393,8 +442,9 @@ vector<SensorObject> read_json_data(const string& filename) {
 
         try {
             SensorObject obj;
-            obj.sensor_id = item.begin().key();
-            obj.timestamp = stod(item.begin().value()["timestamp"].get<string>());
+            obj.sensor_id     = item.begin().key();
+            obj.timestamp     = parseTimestamp(item.begin().value()["timestamp"].get<string>());
+            obj.timestamp_str = item.begin().value()["timestamp"].get<string>();
             
             if (!item.begin().value()["object_positions_x_y"].is_array() || item.begin().value()["object_positions_x_y"].empty()) {
                 continue;
@@ -419,7 +469,7 @@ vector<IMUData> read_imu_data(const string& filename) {
     int id;
     double yaw, heading;
     while (in.read_row(timestamp, id, yaw, heading, state)) {
-        imu_data.push_back({stod(timestamp), heading, state});
+        imu_data.push_back({parseTimestamp(timestamp), heading, state});
     }
     return imu_data;
 }
@@ -430,19 +480,21 @@ vector<IMUData> read_imu_data(const string& filename) {
 		Output: A vector of Cluster objects containing estimated positions.
    */
 vector<Cluster> track_objects(vector<SensorObject>& objects) {
-    unordered_map<string, KalmanFilter> trackers;
-    vector<Cluster> clusters;
-    int cluster_id = 1;
+   unordered_map<string, KalmanFilter> trackers;
+   unordered_map<string, int> cluster_map;  // Maps sensor_id to cluster_id   
+   vector<Cluster> clusters;
+    int next_cluster_id = 1;
     
     for (auto& obj : objects) {
         if (trackers.find(obj.sensor_id) == trackers.end()) {
             trackers[obj.sensor_id].initialize(obj.position);
+			cluster_map[obj.sensor_id] = next_cluster_id++;  // Assign a fixed cluster ID
         }
         trackers[obj.sensor_id].predict(0.1);
         trackers[obj.sensor_id].update(obj.position);
         
         Vector2d est_pos = trackers[obj.sensor_id].get_position();
-        clusters.push_back({cluster_id++, {est_pos}, obj.timestamp});
+        clusters.push_back({cluster_map[obj.sensor_id], {est_pos}, obj.timestamp, obj.timestamp_str});
     }
     return clusters;
 }
@@ -454,13 +506,13 @@ void write_fused_data(const string& filename, vector<Cluster>& clusters, vector<
         double heading = 0.0;
         string status;
         for (auto& imu : imu_data) {
-            if (abs(cluster.timestamp - imu.timestamp) < 1.0) {
+            if (abs(cluster.timestamp - imu.timestamp) < 100.0) {
                 heading = imu.heading;
                 status = imu.state;
                 break;
             }
         }
-        file << cluster.timestamp << "," << cluster.f_id << "," << cluster.cluster_data.size() << "," << heading << "," << status << "\n";
+        file << cluster.timestamp_str << "," << cluster.f_id << "," << cluster.format_cluster_data() << "," << heading << "," << status << "\n";
     }
 }
 
