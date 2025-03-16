@@ -43,8 +43,8 @@ class KalmanFilter {
 public:
     KalmanFilter() {
 
-        // State Vector [x, y, vx, vy] (Object's position & velocity)
-		/*	A 4D vector that represents the object's position (x, y) and velocity (vx, vy).
+        /* State Vector [x, y, vx, vy] (Object's position & velocity)
+		 A 4D vector that represents the object's position (x, y) and velocity (vx, vy).
 		 Initial State (Zero Vector):
 
 		The object starts with an unknown position and velocity.
@@ -54,8 +54,8 @@ public:
 
         x = Vector4d::Zero();
         
-        // State Covariance Matrix  (Uncertainty in State Estimate)
-      /*   Represents the uncertainty in x (position & velocity estimates).
+      /* State Covariance Matrix  (Uncertainty in State Estimate)
+           Represents the uncertainty in x (position & velocity estimates).
            Diagonal values are large (1000), meaning high uncertainty initially.
            Example Values (if our position is accurate, but velocity is uncertain):
              P << 10, 0, 0, 0,
@@ -65,8 +65,8 @@ public:
 
     	 P = Matrix4d::Identity() * 1000;
         
-        // State Transition Matrix (Motion Model we use is Constant Velocity Model)
-		/*  Defines how the state evolves over time using a constant velocity model.
+        /* State Transition Matrix (Motion Model we use is Constant Velocity Model)
+		    Defines how the state evolves over time using a constant velocity model.
             Initially set as identity, but it is updated dynamically with Δt (time step).
               Updated Example (Δt = 1s):
               F << 1, 0, 1, 0,
@@ -80,8 +80,8 @@ public:
 
         F = Matrix4d::Identity();
         
-        // Measurement Matrix ((How We Observe the State) We only observe [x, y])
-		/* Converts the 4D state [x, y, vx, vy] into a 2D measurement [x, y].
+        /* Measurement Matrix ((How We Observe the State) We only observe [x, y])
+		   Converts the 4D state [x, y, vx, vy] into a 2D measurement [x, y].
            This means our sensor only observes position, not velocity.
            Example:
 		     H << 1, 0, 0, 0,
@@ -90,8 +90,8 @@ public:
         H = Matrix<double, 2, 4>::Zero();
         H(0, 0) = H(1, 1) = 1;
         
-        // Measurement Covariance Matrix (Assumed Sensor Noise)
-		/*  Represents sensor measurement noise (how uncertain our position measurements are).
+        /* Measurement Covariance Matrix (Assumed Sensor Noise)
+		   Represents sensor measurement noise (how uncertain our position measurements are).
             A higher value (10) means noisy sensor readings.
                Example Values:
                   If our sensor is precise, we might use:
@@ -103,8 +103,8 @@ public:
 
         R = Matrix2d::Identity() * 10;
         
-        // Process Noise Covariance (System Uncertainty)
-		/* Represents uncertainty in the motion model (errors in velocity & acceleration).
+        /* Process Noise Covariance (System Uncertainty)
+		   Represents uncertainty in the motion model (errors in velocity & acceleration).
 			A higher value means our model is less reliable.
 			 Example Values:
 
@@ -138,8 +138,8 @@ public:
         F(0, 2) = dt; // Position x depends on velocity vx over time dt
         F(1, 3) = dt; // Position y depends on velocity vy over time dt
         
-        // Predict next state i.e Computes where the object should be after dt seconds using the motion model.
-		/* The equation:
+        /* Predict next state i.e Computes where the object should be after dt seconds using the motion model.
+		   The equation:
            𝑥′=𝐹⋅x     applies linear motion prediction. 
 			Example Calculation (Before Prediction)
 			Assume:	
@@ -159,8 +159,8 @@ public:
 		   */
         x = F * x;
 		
-		//Predict the State Covariance (P)
-		/*  P represents uncertainty in the estimated state.
+		/*Predict the State Covariance (P)
+		  P represents uncertainty in the estimated state.
            Uncertainty increases over time as we move forward without a measurement update.
            The process noise matrix Q models how much error we expect in prediction.
          Effect:
