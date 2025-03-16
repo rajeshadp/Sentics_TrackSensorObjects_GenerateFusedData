@@ -27,13 +27,13 @@ Read Sensor Data (JSON) – Loads object positions from a sensor file.
 
 Read IMU Data (CSV) – Loads IMU readings (e.g., heading, state).
 
-Track Objects (Kalman Filter) – Uses a Kalman filter to smooth object positions and estimate movement.
+Track Objects (Kalman Filter) – Uses a Kalman filter to smooth headings and estimate movement.
 
 Fuse Data – Combines object positions with IMU data based on timestamps.
 
 Save to CSV – Writes the processed and fused data for further analysis.
 
-This helps reduce sensor noise, track moving objects more accurately, and correlate sensor data with IMU readings for better insights.
+This helps reduce sensor noise, track moving headings more accurately, and correlate sensor data with IMU readings for better insights.
 
 Compile & execute:
 ==================
