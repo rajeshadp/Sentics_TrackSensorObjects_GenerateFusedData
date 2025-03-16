@@ -506,7 +506,7 @@ void write_fused_data(const string& filename, vector<Cluster>& clusters, vector<
         double heading = 0.0;
         string status;
         for (auto& imu : imu_data) {
-            if (abs(cluster.timestamp - imu.timestamp) < 100.0) {
+            if (abs(cluster.timestamp - imu.timestamp) < 1.0) {
                 heading = imu.heading;
                 status = imu.state;
                 break;
