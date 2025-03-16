@@ -11,9 +11,12 @@ nlohmann/json.hpp → A JSON library used to parse sensor data from JSON files.
 fast-cpp-csv-parser/csv.h → A high-performance CSV parser used for reading IMU data.
 
 Eigen/Dense → Provides matrix operations for implementing the Kalman filter.
-🔹 Vectors & Matrices – Supports fixed-size (Vector2d, Matrix3d) and dynamic-size (MatrixXd) operations.
+🔹 Vectors & Matrices – Supports fixed-size (Vector2d, Matrix3d) and dynamic-size (MatrixXd) operations. 
+
 🔹 Linear Algebra – Solves equations, performs matrix decomposition, and handles transformations.
+
 🔹 Optimized Performance – Uses expression templates to avoid unnecessary memory allocations.
+
 🔹 Header-Only – No need for separate compilation; just include <Eigen/Dense>.
 
 This program reads sensor data, tracks objects using a Kalman filter, and fuses the data with IMU (Inertial Measurement Unit) readings to generate a refined dataset. Finally, it writes the fused data to a CSV file.
